@@ -9,7 +9,7 @@ import UIKit
 
 class ViewController: UIViewController {
     
-    var views = [1,2,3,4]
+    var views = [1,2,3]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,7 +61,7 @@ class ViewController: UIViewController {
                         videoView.backgroundColor = UIColor.random
                         rowStackView.addArrangedSubview(videoView)
                     } else {
-                        rowStackView.addArrangedSubview(UIView()) // Empty view for grid balance
+                        rowStackView.addArrangedSubview(addDummyView()) // Empty view for grid balance
                     }
                 }
                 
@@ -98,7 +98,9 @@ class ViewController: UIViewController {
             
             let remainingViews = Array(videoViews.dropFirst())
             let columns = 2
-            let rows = Int(ceil(Double(remainingViews.count) / Double(columns)))
+            let add = 7 - remainingViews.count
+            let rows = Int(ceil(Double(remainingViews.count + add) / Double(columns)))
+//            rows = rows + add
             
             for rowIndex in 0..<rows {
                 let rowStackView = UIStackView()
@@ -115,7 +117,7 @@ class ViewController: UIViewController {
                         rowStackView.addArrangedSubview(videoView)
                         
                     } else {
-                        rowStackView.addArrangedSubview(UIView()) // Empty view for grid balance
+                        rowStackView.addArrangedSubview(addDummyView()) // Empty view for grid balance
                     }
                 }
                 
@@ -137,6 +139,33 @@ class ViewController: UIViewController {
         }
         
         
+    }
+    func addDummyView() -> UIView {
+        let dummyView = UIView()
+        dummyView.backgroundColor = UIColor(red: 33/255, green: 23/255, blue: 42/255, alpha: 1.0)
+        dummyView.translatesAutoresizingMaskIntoConstraints = false
+        let button = UIButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.backgroundColor = .blue
+        button.setTitle("Add", for: .normal)
+        dummyView.addSubview(button)
+        
+        NSLayoutConstraint.activate([
+            button.centerXAnchor.constraint(equalTo: dummyView.centerXAnchor),
+            button.centerYAnchor.constraint(equalTo: dummyView.centerYAnchor),
+            button.widthAnchor.constraint(equalToConstant: 28),
+            button.heightAnchor.constraint(equalToConstant: 28)
+        ])
+        
+        // Add the dummy view to the array
+//        dummyViews.append(dummyView)
+        return dummyView
+    }
+    
+    // Function to clear all dummy views
+    func clearDummyViews() {
+//        dummyViews.forEach { $0.removeFromSuperview() }
+//        dummyViews.removeAll()
     }
 }
 extension UIColor {
