@@ -7,10 +7,11 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController2: UIViewController {
     
-    var views = [1,2,3]
-    
+    var views = [1,2]
+    var colors:[UIColor] = [.red,.blue]
+    private var originalCenter: CGPoint?
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -25,7 +26,9 @@ class ViewController: UIViewController {
         case 1:
             // Full-screen layout for one participant
             let videoView = UIView()
-            videoView.backgroundColor = .red
+            videoView.backgroundColor = colors[0]
+            videoView.tag = 0
+            addTapGesture(to: videoView)
             view.addSubview(videoView)
             videoView.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
@@ -58,7 +61,9 @@ class ViewController: UIViewController {
                     let index = rowIndex * columns + columnIndex
                     if index < videoViews.count {
                         let videoView = UIView()
-                        videoView.backgroundColor = UIColor.random
+                        videoView.tag = index
+                        addTapGesture(to: videoView)
+                        videoView.backgroundColor = colors[index]
                         rowStackView.addArrangedSubview(videoView)
                     } else {
                         rowStackView.addArrangedSubview(addDummyView()) // Empty view for grid balance
@@ -80,6 +85,8 @@ class ViewController: UIViewController {
         default:
             let firstView = UIView()
             firstView.backgroundColor = .red
+            firstView.tag = 0
+            addTapGesture(to: firstView)
             view.addSubview(firstView)
             firstView.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
@@ -113,7 +120,9 @@ class ViewController: UIViewController {
                     let index = rowIndex * columns + columnIndex
                     if index < remainingViews.count {
                         let videoView = UIView()
-                        videoView.backgroundColor = .random
+                        videoView.tag = index
+                        addTapGesture(to: videoView)
+                        videoView.backgroundColor = colors[index]
                         rowStackView.addArrangedSubview(videoView)
                         
                     } else {
@@ -166,6 +175,118 @@ class ViewController: UIViewController {
     func clearDummyViews() {
 //        dummyViews.forEach { $0.removeFromSuperview() }
 //        dummyViews.removeAll()
+    }
+    private func addTapGesture(to videoView: UIView) {
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleDrag(_:)))
+        videoView.addGestureRecognizer(panGesture)
+        
+        videoView.isUserInteractionEnabled = true
+        
+    }
+    @objc func handleDrag(_ gesture: UIPanGestureRecognizer) {
+        guard let draggedView = gesture.view else { return }
+        
+        switch gesture.state {
+        case .began:
+            originalCenter = draggedView.center // Save the original center for reference
+            
+        case .changed:
+            let translation = gesture.translation(in: view)
+            // Move the view as the user drags
+            draggedView.center = CGPoint(x: draggedView.center.x + translation.x, y: draggedView.center.y + translation.y)
+            gesture.setTranslation(.zero, in: view)
+            // Prevent dragging outside of cameraView's bounds
+            let newCenter = CGPoint(x: draggedView.center.x + translation.x, y: draggedView.center.y + translation.y)
+            
+            if view.bounds.contains(newCenter) {
+                draggedView.center = newCenter
+            }
+            
+        case .ended, .cancelled:
+            if let swapTarget = detectSwapTarget(for: draggedView) {
+                swapViews(draggedView, with: swapTarget)
+            } else {
+                // If no swap target is detected, move the view back to its original position
+                UIView.animate(withDuration: 0.3) {
+                    draggedView.center = self.originalCenter ?? draggedView.center
+                }
+            }
+            
+        default:
+            break
+        }
+    }
+    func detectSwapTarget(for draggedView: UIView) -> UIView? {
+        var closestView: UIView?
+        var closestDistance: CGFloat = .greatestFiniteMagnitude
+        
+        // Get the center point of the dragged view
+        let draggedCenter = draggedView.center
+        
+        // Recursively check all subviews of cameraView
+        closestView = findClosestView(in: view, excluding: draggedView, draggedCenter: draggedCenter, closestDistance: &closestDistance)
+        
+        // Return the closest view if it's within a reasonable distance (adjust this threshold as needed)
+//        if closestDistance < draggedView.frame.width {
+//            return closestView
+//        }
+        
+        return closestView
+    }
+    // Recursive function to traverse subviews and find the closest view
+    func findClosestView(in containerView: UIView, excluding draggedView: UIView, draggedCenter: CGPoint, closestDistance: inout CGFloat) -> UIView? {
+        var closestView: UIView?
+        
+        for subview in containerView.subviews {
+            // If the subview is a stack view, traverse its arranged subviews
+            if let stackView = subview as? UIStackView {
+                // Recursively traverse the arrangedSubviews of the stackView
+                for arrangedSubview in stackView.arrangedSubviews {
+                    // Recursive check for nested stack views
+                    if let nestedClosestView = findClosestView(in: arrangedSubview, excluding: draggedView, draggedCenter: draggedCenter, closestDistance: &closestDistance) {
+                        closestView = nestedClosestView
+                    }
+                }
+            } else {
+                // If it's not a stack view and not the dragged view itself, check the distance
+                if subview != draggedView {
+                    // Convert the subview's frame to the coordinate space of cameraView
+                    let convertedFrame = subview.convert(subview.bounds, to: view)
+                    
+                    // Calculate the distance between the centers
+                    let distance = distanceBetweenPoints(draggedCenter, CGPoint(x: convertedFrame.midX, y: convertedFrame.midY))
+                    
+                    // Update the closest view if this subview is closer
+                    if distance < closestDistance {
+                        closestDistance = distance
+                        closestView = subview
+                    }
+                }
+            }
+        }
+        
+        return closestView
+    }
+    func distanceBetweenPoints(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
+        let dx = point1.x - point2.x
+        let dy = point1.y - point2.y
+        return sqrt(dx * dx + dy * dy)
+    }
+    func swapViews(_ firstView: UIView, with secondView: UIView) {
+        let firstTag = firstView.tag
+        let secondTag = secondView.tag
+        
+        // Swap centers of the views
+        let firstCenter = firstView.center
+        let secondCenter = secondView.center
+        
+        UIView.animate(withDuration: 0.3) {
+            firstView.center = secondCenter
+            secondView.center = firstCenter
+        }
+        
+        views.swapAt(secondTag, firstTag)
+        setupVideoLayout(for: views)
     }
 }
 extension UIColor {
