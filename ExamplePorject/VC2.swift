@@ -446,6 +446,19 @@ class VideoPaticipentView: UIView {
         return stack
     }()
     
+    private let profileImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+//        imageView.image = UIImage(named: "profile") // Placeholder image
+        imageView.backgroundColor = .lightGray
+        imageView.layer.cornerRadius = 40 // Circular image size (half of 80x80)
+        imageView.clipsToBounds = true
+        imageView.layer.borderColor = UIColor.white.cgColor
+        imageView.layer.borderWidth = 2
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUserDetailsViews()
@@ -459,7 +472,7 @@ class VideoPaticipentView: UIView {
     private func setupUserDetailsViews() {
         // Add the stackView as a subview
         addSubview(stackView)
-        
+        addSubview(profileImageView)
         // Add the label inside the containerView
         containerView.addSubview(participantLabel)
         
@@ -483,5 +496,22 @@ class VideoPaticipentView: UIView {
 //            actionButton.widthAnchor.constraint(equalToConstant: 40),
 //            actionButton.heightAnchor.constraint(equalToConstant: 40)
 //        ])
+        
+        // Set up constraints for the profile image view (centered in the VideoParticipantView)
+        NSLayoutConstraint.activate([
+            profileImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            profileImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            profileImageView.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.3), // 30% of view width
+            profileImageView.heightAnchor.constraint(equalTo: profileImageView.widthAnchor) // Maintain aspect ratio
+        ])
+        
+        // Round the image view for a circular profile image
+        layoutIfNeeded() // Ensure layout is calculated
+        profileImageView.layer.cornerRadius = profileImageView.frame.size.width / 2
+    }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Ensure the image view remains circular after layout
+        profileImageView.layer.cornerRadius = profileImageView.frame.size.width / 2
     }
 }
