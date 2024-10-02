@@ -17,8 +17,8 @@ import UIKit
 class ViewController: UIViewController {
     
     // Array to hold actual views
-    var views: [UIView] = []
-    var colors: [UIColor] = [.red, .blue,.purple,.yellow,.brown] // Example colors for views
+    var views: [VideoPaticipentView] = []
+    var colors: [UIColor] = [.red, .blue,.purple,.green,.brown] // Example colors for views
     
     private var originalCenter: CGPoint?
     
@@ -270,8 +270,8 @@ class ViewController: UIViewController {
     }
     
     // Function to create a video view with a specific index
-    private func createVideoView(index: Int) -> UIView {
-        let videoView = UIView()
+    private func createVideoView(index: Int) -> VideoPaticipentView {
+        let videoView = VideoPaticipentView()
         videoView.backgroundColor = colors[index % colors.count] // Assign color based on the index
         videoView.tag = index // Assign tag to track view
         return videoView
@@ -285,7 +285,7 @@ class ViewController: UIViewController {
     }
     
     @objc func handleDrag(_ gesture: UIPanGestureRecognizer) {
-        guard let draggedView = gesture.view else { return }
+        guard let draggedView = gesture.view as? VideoPaticipentView else { return }
         
         switch gesture.state {
         case .began:
@@ -312,8 +312,8 @@ class ViewController: UIViewController {
         }
     }
     
-    func detectSwapTarget(for draggedView: UIView) -> UIView? {
-        var closestView: UIView?
+    func detectSwapTarget(for draggedView: VideoPaticipentView) -> VideoPaticipentView? {
+        var closestView: VideoPaticipentView?
         var closestDistance: CGFloat = .greatestFiniteMagnitude
         
         // Get the center point of the dragged view
@@ -330,8 +330,8 @@ class ViewController: UIViewController {
         return closestView
     }
     // Recursive function to traverse subviews and find the closest view
-    func findClosestView(in containerView: UIView, excluding draggedView: UIView, draggedCenter: CGPoint,draggedViewArea: CGFloat, closestDistance: inout CGFloat) -> UIView? {
-        var closestView: UIView?
+    func findClosestView(in containerView: UIView, excluding draggedView: VideoPaticipentView, draggedCenter: CGPoint,draggedViewArea: CGFloat, closestDistance: inout CGFloat) -> VideoPaticipentView? {
+        var closestView: VideoPaticipentView?
         
         for subview in containerView.subviews {
             // If the subview is a stack view, traverse its arranged subviews
@@ -339,7 +339,7 @@ class ViewController: UIViewController {
                 // Recursively traverse the arrangedSubviews of the stackView
                 for arrangedSubview in stackView.arrangedSubviews {
                     // Recursive check for nested stack views
-                    if let nestedClosestView = findClosestView(in: arrangedSubview, excluding: draggedView, draggedCenter: draggedCenter,draggedViewArea: draggedViewArea, closestDistance: &closestDistance) {
+                    if let nestedClosestView = findClosestView(in: arrangedSubview as! VideoPaticipentView, excluding: draggedView, draggedCenter: draggedCenter,draggedViewArea: draggedViewArea, closestDistance: &closestDistance) {
                         closestView = nestedClosestView
                     }
                 }
@@ -362,7 +362,7 @@ class ViewController: UIViewController {
                         // Update the closest view if this subview is closer
                         if distance < closestDistance {
                             closestDistance = distance
-                            closestView = subview
+                            closestView = subview as? VideoPaticipentView
                         }
                     }
                 }
@@ -379,7 +379,7 @@ class ViewController: UIViewController {
         return sqrt(dx * dx + dy * dy)
     }
     
-    func swapViews(_ firstView: UIView, with secondView: UIView) {
+    func swapViews(_ firstView: VideoPaticipentView, with secondView: VideoPaticipentView) {
         // Swap the views in the array
         if let firstIndex = views.firstIndex(of: firstView), let secondIndex = views.firstIndex(of: secondView) {
             let tempTag = firstView.tag
@@ -396,5 +396,92 @@ class ViewController: UIViewController {
         let dummyView = UIView()
         dummyView.backgroundColor = UIColor(red: 33/255, green: 23/255, blue: 42/255, alpha: 1.0)
         return dummyView
+    }
+}
+
+import UIKit
+
+class VideoPaticipentView: UIView {
+    
+    private let participantLabel: UILabel = {
+        let label = UILabel()
+        label.backgroundColor = .clear
+        label.textColor = .white
+        label.font = UIFont.systemFont(ofSize: 10)
+        label.text = "Muhammad Nouman"
+        label.textAlignment = .center
+        label.numberOfLines = 1
+        label.clipsToBounds = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let actionButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(.liveMicSelectedNoBg, for: .normal)
+        button.tintColor = .white.withAlphaComponent(0.75)
+        button.backgroundColor = .clear // No background for the button
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
+    private let containerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .black.withAlphaComponent(0.15)
+        view.layer.cornerRadius = 8
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.2
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layer.shadowRadius = 4
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private lazy var stackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [actionButton,containerView])
+        stack.axis = .vertical
+        stack.alignment = .trailing
+        stack.spacing = 8 // Space between the label container and the button
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUserDetailsViews()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupUserDetailsViews()
+    }
+    
+    private func setupUserDetailsViews() {
+        // Add the stackView as a subview
+        addSubview(stackView)
+        
+        // Add the label inside the containerView
+        containerView.addSubview(participantLabel)
+        
+        // Set up constraints for the stackView
+        NSLayoutConstraint.activate([
+            stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 20)
+        ])
+        
+        // Set up constraints for the label inside the containerView
+        NSLayoutConstraint.activate([
+            participantLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 4),
+            participantLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -4),
+            participantLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
+            participantLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8)
+        ])
+        
+        // Set up constraints for the button (outside the containerView but part of the stackView)
+//        NSLayoutConstraint.activate([
+//            actionButton.widthAnchor.constraint(equalToConstant: 40),
+//            actionButton.heightAnchor.constraint(equalToConstant: 40)
+//        ])
     }
 }
