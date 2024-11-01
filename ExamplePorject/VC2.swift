@@ -25,8 +25,17 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        setupVideoLayout(for: colors.count)
+//        setupVideoLayout(for: colors.count)
+        setupVideoPlayer()
     }
+    private func setupVideoPlayer(){
+        let baseURL = "https://cdn.mateslive.com"
+        let giftString = baseURL+"/gifts/Burger/Burger.mp4"
+        let remoteVideoURL = URL(string: giftString)!
+        let playerHandler = VAPVideoPlayerHandler(parentView: self.view)
+        playerHandler.setupPlayer(with: remoteVideoURL)
+    }
+    
     
     private func setupVideoLayout(for numberOfViews: Int) {
         // Remove existing subviews

@@ -17,7 +17,7 @@ class ViewController2: UIViewController {
         // Do any additional setup after loading the view.
         setupVideoLayout(for: views)
     }
-    
+
     private func setupVideoLayout(for videoViews: [Int]) {
         // Remove existing subviews
         view.subviews.forEach { $0.removeFromSuperview() }
